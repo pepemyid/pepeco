@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PepeEcosystem Staking</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://pepe.my.id/assets/images/favicon.png">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary: #2196F3;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --dark: #333;
+            --light: #f5f5f5;
+            --gray: #ddd;
+            --border-radius: 10px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--primary);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .wallet-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .wallet-info {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .wallet-status {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .connected {
+            color: var(--primary);
+        }
+        
+        .disconnected {
+            color: var(--danger);
+        }
+        
+        .wallet-address {
+            font-family: 'Courier New', monospace;
+            background: var(--light);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 5px;
+            font-size: 14px;
+            word-break: break-all;
+            border: 1px solid var(--gray);
+        }
+        
+        .wallet-balance {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+        
+        button.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+        
+        button.secondary {
+            background: linear-gradient(135deg, var(--secondary), #1976D2);
+            color: white;
+        }
+        
+        button.secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, var(--danger), #D32F2F);
+            color: white;
+        }
+        
+        button.danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+        }
+        
+        button.warning {
+            background: linear-gradient(135deg, var(--warning), #F57C00);
+            color: white;
+        }
+        
+        button.warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--gray);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-card {
+            background: var(--light);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background: var(--light);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .network-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        .network-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+        }
+        
+        .network-indicator.offline {
+            background: var(--danger);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+        }
+        
+        .official-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .wallet-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .button-group {
+                justify-content: center;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .logo {
+                width: 50px;
+                height: 50px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+            
+            .logo {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="https://pepe.my.id/assets/images/favicon.png" alt="PepeEcosystem Logo" class="logo">
+                <div>
+                    <h1>PepeEcosystem Staking</h1>
+                    <p class="subtitle">Stake your POL tokens to earn PEPECO rewards</p>
+                </div>
+            </div>
+            <div class="network-info">
+                <div class="network-indicator" id="network-indicator"></div>
+                <span id="network-name">Disconnected</span>
+            </div>
+            <div class="official-badge">
+                <span>✓</span> Official PepeEcosystem DApp
+            </div>
+        </header>
+        
+        <div class="card">
+            <div class="wallet-section">
+                <div class="wallet-info">
+                    <div class="wallet-status disconnected" id="wallet-status">Wallet Not Connected</div>
+                    <div id="wallet-address" class="wallet-address" style="display: none;"></div>
+                    <div id="wallet-balance" class="wallet-balance" style="display: none;"></div>
+                </div>
+                <div class="button-group">
+                    <button id="connect-wallet" class="primary">
+                        <span>🔗</span> Connect Wallet
+                    </button>
+                    <button id="disconnect-wallet" class="danger" style="display: none;">
+                        <span>🚫</span> Disconnect
+                    </button>
+                    <button id="switch-wallet" class="secondary" style="display: none;">
+                        <span>🔄</span> Switch Wallet
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="stake">💰 Stake</div>
+            <div class="tab" data-tab="unstake">🏦 Unstake</div>
+            <div class="tab" data-tab="rewards">🎁 Rewards</div>
+            <div class="tab" data-tab="info">ℹ️ Info</div>
+        </div>
+        
+        <div id="stake-tab" class="tab-content active">
+            <div class="card">
+                <h2>Stake POL Tokens</h2>
+                <div id="stake-status" class="status-message" style="display: none;"></div>
+                
+                <div class="form-group">
+                    <label for="stake-amount">Amount to Stake (POL):</label>
+                    <input type="number" id="stake-amount" min="1" step="0.1" placeholder="Enter amount (Minimum 1 POL)">
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Minimum Stake</div>
+                        <div class="info-value">1 POL</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Staking Tax</div>
+                        <div class="info-value">2%</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">You'll Receive</div>
+                        <div class="info-value" id="staking-receive">0 POL</div>
+                    </div>
+                </div>
+                
+                <button id="stake-button" class="primary" disabled>
+                    <span>💰</span> Stake Tokens
+                </button>
+            </div>
+        </div>
+        
+        <div id="unstake-tab" class="tab-content">
+            <div class="card">
+                <h2>Unstake POL Tokens</h2>
+                <div id="unstake-status" class="status-message" style="display: none;"></div>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Staked Amount</div>
+                        <div class="info-value" id="staked-amount">0 POL</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Staking Start</div>
+                        <div class="info-value" id="staking-start">-</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Staking Duration</div>
+                        <div class="info-value" id="staking-duration">-</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Early Unstake Penalty</div>
+                        <div class="info-value">20%</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">You'll Receive</div>
+                        <div class="info-value" id="unstake-receive">0 POL</div>
+                    </div>
+                </div>
+                
+                <button id="unstake-button" class="warning" disabled>
+                    <span>🏦</span> Unstake Tokens
+                </button>
+            </div>
+        </div>
+        
+        <div id="rewards-tab" class="tab-content">
+            <div class="card">
+                <h2>Claim Rewards</h2>
+                <div id="rewards-status" class="status-message" style="display: none;"></div>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Pending Rewards</div>
+                        <div class="info-value" id="pending-rewards">0 PEPECO</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Current Reward Rate</div>
+                        <div class="info-value" id="reward-rate">0 PEPECO</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Your PEPECO Balance</div>
+                        <div class="info-value" id="pepeco-balance">0</div>
+                    </div>
+                </div>
+                
+                <button id="claim-rewards-button" class="secondary" disabled>
+                    <span>🎁</span> Claim Rewards
+                </button>
+            </div>
+        </div>
+        
+        <div id="info-tab" class="tab-content">
+            <div class="card">
+                <h2>Staking Information</h2>
+                
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">Total Supply</div>
+                        <div class="info-value" id="total-supply">0</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Current Period</div>
+                        <div class="info-value" id="current-period">0</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Staking Duration</div>
+                        <div class="info-value">365 days</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Staking Tax</div>
+                        <div class="info-value">2%</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Early Unstake Penalty</div>
+                        <div class="info-value">20%</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Minimum Stake</div>
+                        <div class="info-value">1 POL</div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 20px; background: #f8f9fa;">
+                    <h3>About PepeEcosystem</h3>
+                    <p>PepeEcosystem is a decentralized ecosystem built on Polygon network, offering innovative staking solutions and community-driven development.</p>
+                    <div style="margin-top: 15px; display: flex; gap: 15px; flex-wrap: wrap;">
+                        <a href="https://pepe.my.id" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">🌐 Official Website</a>
+                        <a href="#" style="color: var(--secondary); text-decoration: none; font-weight: 600;">📖 Documentation</a>
+                        <a href="#" style="color: var(--warning); text-decoration: none; font-weight: 600;">👥 Community</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>© 2024 PepeEcosystem. All rights reserved. Always verify you're on the official website.</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script>
+        // Contract ABI
+        const contractABI = [
+            {
+                "inputs": [],
+                "name": "stake",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "unstake",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "claimRewards",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getPendingRewards",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "user",
+                        "type": "address"
+                    }
+                ],
+                "name": "getStakingInfo",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "startTime",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "lastClaimTime",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "bool",
+                        "name": "isActive",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getCurrentRewardRate",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "totalSupply",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "getCurrentPeriod",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Ganti dengan alamat kontrak Anda
+        const CONTRACT_ADDRESS = "0xaD42d18148dd81ab2f24c28aA92ad283c2255b9B";
+        
+        let web3;
+        let contract;
+        let userAccount = null;
+        let isConnected = false;
+        
+        // Inisialisasi aplikasi
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupTabs();
+            setupEventListeners();
+            await checkInitialConnection();
+        });
+        
+        // Setup tab navigation
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = `${tab.getAttribute('data-tab')}-tab`;
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    if (tab.getAttribute('data-tab') === 'unstake' || tab.getAttribute('data-tab') === 'rewards') {
+                        loadStakingInfo();
+                    }
+                });
+            });
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('connect-wallet').addEventListener('click', connectWallet);
+            document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
+            document.getElementById('switch-wallet').addEventListener('click', switchWallet);
+            document.getElementById('stake-button').addEventListener('click', stakeTokens);
+            document.getElementById('unstake-button').addEventListener('click', unstakeTokens);
+            document.getElementById('claim-rewards-button').addEventListener('click', claimRewards);
+            document.getElementById('stake-amount').addEventListener('input', updateStakingReceive);
+        }
+        
+        // Cek koneksi awal
+        async function checkInitialConnection() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await initializeWeb3(accounts[0]);
+                    } else {
+                        updateNetworkInfo();
+                    }
+                } catch (error) {
+                    console.error('Error checking initial connection:', error);
+                }
+            } else {
+                showStatus('stake-status', 'Please install MetaMask to use this dApp', 'error');
+            }
+        }
+        
+        // Koneksi ke wallet
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    showStatus('stake-status', 'Connecting to wallet...', 'warning');
+                    
+                    const accounts = await ethereum.request({ 
+                        method: 'eth_requestAccounts' 
+                    });
+                    
+                    await initializeWeb3(accounts[0]);
+                    showStatus('stake-status', 'Wallet connected successfully!', 'success');
+                    
+                } catch (error) {
+                    console.error('User denied account access', error);
+                    if (error.code === 4001) {
+                        showStatus('stake-status', 'User denied wallet connection', 'error');
+                    } else {
+                        showStatus('stake-status', 'Error connecting to wallet: ' + error.message, 'error');
+                    }
+                }
+            } else {
+                showStatus('stake-status', 'Please install MetaMask to use this dApp', 'error');
+            }
+        }
+        
+        // Disconnect wallet
+        function disconnectWallet() {
+            userAccount = null;
+            isConnected = false;
+            
+            // Update UI
+            document.getElementById('wallet-status').textContent = 'Wallet Disconnected';
+            document.getElementById('wallet-status').className = 'wallet-status disconnected';
+            document.getElementById('wallet-address').style.display = 'none';
+            document.getElementById('wallet-balance').style.display = 'none';
+            
+            document.getElementById('connect-wallet').style.display = 'flex';
+            document.getElementById('disconnect-wallet').style.display = 'none';
+            document.getElementById('switch-wallet').style.display = 'none';
+            
+            // Disable buttons
+            document.getElementById('stake-button').disabled = true;
+            document.getElementById('unstake-button').disabled = true;
+            document.getElementById('claim-rewards-button').disabled = true;
+            
+            // Clear data
+            document.getElementById('staked-amount').textContent = '0 POL';
+            document.getElementById('staking-start').textContent = '-';
+            document.getElementById('staking-duration').textContent = '-';
+            document.getElementById('unstake-receive').textContent = '0 POL';
+            document.getElementById('pending-rewards').textContent = '0 PEPECO';
+            document.getElementById('pepeco-balance').textContent = '0';
+            
+            showStatus('stake-status', 'Wallet disconnected successfully', 'success');
+            
+            // Reset form
+            document.getElementById('stake-amount').value = '';
+            updateStakingReceive();
+        }
+        
+        // Switch wallet (membuka MetaMask untuk pilih wallet lain)
+        async function switchWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // MetaMask doesn't have a direct "switch wallet" method,
+                    // so we request accounts again which opens the account selector
+                    await ethereum.request({ 
+                        method: 'wallet_requestPermissions',
+                        params: [{ eth_accounts: {} }]
+                    });
+                    
+                    // After permissions are granted, get the new accounts
+                    const accounts = await ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await initializeWeb3(accounts[0]);
+                        showStatus('stake-status', 'Wallet switched successfully!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error switching wallet:', error);
+                    if (error.code === 4001) {
+                        showStatus('stake-status', 'User cancelled wallet switch', 'warning');
+                    } else {
+                        showStatus('stake-status', 'Error switching wallet: ' + error.message, 'error');
+                    }
+                }
+            }
+        }
+        
+        // Inisialisasi Web3
+        async function initializeWeb3(account) {
+            try {
+                web3 = new Web3(window.ethereum);
+                userAccount = account;
+                isConnected = true;
+                
+                contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
+                
+                // Update UI
+                updateWalletUI();
+                updateNetworkInfo();
+                
+                // Load data
+                await loadContractInfo();
+                await loadStakingInfo();
+                await loadWalletBalance();
+                
+            } catch (error) {
+                console.error('Error initializing Web3:', error);
+                showStatus('stake-status', 'Error initializing Web3: ' + error.message, 'error');
+            }
+        }
+        
+        // Update wallet UI
+        function updateWalletUI() {
+            const shortAddress = userAccount ? `${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}` : '';
+            
+            document.getElementById('wallet-status').textContent = `Connected: ${shortAddress}`;
+            document.getElementById('wallet-status').className = 'wallet-status connected';
+            document.getElementById('wallet-address').textContent = userAccount;
+            document.getElementById('wallet-address').style.display = 'block';
+            
+            document.getElementById('connect-wallet').style.display = 'none';
+            document.getElementById('disconnect-wallet').style.display = 'flex';
+            document.getElementById('switch-wallet').style.display = 'flex';
+            
+            document.getElementById('stake-button').disabled = false;
+        }
+        
+        // Update network info
+        async function updateNetworkInfo() {
+            if (web3 && userAccount) {
+                try {
+                    const chainId = await web3.eth.getChainId();
+                    const networkName = getNetworkName(chainId);
+                    
+                    document.getElementById('network-name').textContent = networkName;
+                    document.getElementById('network-indicator').className = 'network-indicator';
+                } catch (error) {
+                    document.getElementById('network-name').textContent = 'Unknown Network';
+                    document.getElementById('network-indicator').className = 'network-indicator offline';
+                }
+            } else {
+                document.getElementById('network-name').textContent = 'Disconnected';
+                document.getElementById('network-indicator').className = 'network-indicator offline';
+            }
+        }
+        
+        // Get network name from chain ID
+        function getNetworkName(chainId) {
+            const networks = {
+                1: 'Ethereum Mainnet',
+                137: 'Polygon Mainnet',
+                80001: 'Polygon Mumbai',
+                56: 'BSC Mainnet',
+                97: 'BSC Testnet'
+            };
+            return networks[chainId] || `Chain ${chainId}`;
+        }
+        
+        // Load wallet balance
+        async function loadWalletBalance() {
+            if (!userAccount) return;
+            
+            try {
+                const balance = await web3.eth.getBalance(userAccount);
+                const balanceInEth = web3.utils.fromWei(balance, 'ether');
+                
+                document.getElementById('wallet-balance').textContent = `Balance: ${parseFloat(balanceInEth).toFixed(4)} MATIC`;
+                document.getElementById('wallet-balance').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading wallet balance:', error);
+            }
+        }
+        
+        // Load contract info
+        async function loadContractInfo() {
+            try {
+                const totalSupply = await contract.methods.totalSupply().call();
+                const currentPeriod = await contract.methods.getCurrentPeriod().call();
+                const rewardRate = await contract.methods.getCurrentRewardRate().call();
+                
+                document.getElementById('total-supply').textContent = formatNumber(totalSupply);
+                document.getElementById('current-period').textContent = currentPeriod;
+                document.getElementById('reward-rate').textContent = formatNumber(web3.utils.fromWei(rewardRate, 'ether')) + ' PEPECO';
+                
+                if (userAccount) {
+                    const balance = await contract.methods.balanceOf(userAccount).call();
+                    document.getElementById('pepeco-balance').textContent = formatNumber(web3.utils.fromWei(balance, 'ether'));
+                }
+            } catch (error) {
+                console.error('Error loading contract info:', error);
+            }
+        }
+        
+        // Load staking info
+        async function loadStakingInfo() {
+            if (!userAccount) return;
+            
+            try {
+                const stakingInfo = await contract.methods.getStakingInfo(userAccount).call();
+                const pendingRewards = await contract.methods.getPendingRewards(userAccount).call();
+                
+                // Update unstake tab
+                document.getElementById('staked-amount').textContent = formatNumber(web3.utils.fromWei(stakingInfo.amount, 'ether')) + ' POL';
+                
+                if (stakingInfo.startTime !== '0') {
+                    const startDate = new Date(stakingInfo.startTime * 1000);
+                    document.getElementById('staking-start').textContent = startDate.toLocaleDateString();
+                    
+                    const duration = Math.floor((Date.now() / 1000 - stakingInfo.startTime) / (60 * 60 * 24));
+                    document.getElementById('staking-duration').textContent = duration + ' days';
+                    
+                    let unstakeAmount = parseFloat(web3.utils.fromWei(stakingInfo.amount, 'ether'));
+                    if (Date.now() / 1000 < parseInt(stakingInfo.startTime) + 365 * 24 * 60 * 60) {
+                        unstakeAmount = unstakeAmount * 0.8; // 20% penalty
+                    }
+                    document.getElementById('unstake-receive').textContent = formatNumber(unstakeAmount) + ' POL';
+                    
+                    document.getElementById('unstake-button').disabled = !stakingInfo.isActive;
+                } else {
+                    document.getElementById('staking-start').textContent = '-';
+                    document.getElementById('staking-duration').textContent = '-';
+                    document.getElementById('unstake-receive').textContent = '0 POL';
+                    document.getElementById('unstake-button').disabled = true;
+                }
+                
+                // Update rewards tab
+                document.getElementById('pending-rewards').textContent = formatNumber(web3.utils.fromWei(pendingRewards, 'ether')) + ' PEPECO';
+                document.getElementById('claim-rewards-button').disabled = !stakingInfo.isActive || pendingRewards === '0';
+                
+            } catch (error) {
+                console.error('Error loading staking info:', error);
+            }
+        }
+        
+        // Stake tokens
+        async function stakeTokens() {
+            const amount = document.getElementById('stake-amount').value;
+            
+            if (!amount || amount < 1) {
+                showStatus('stake-status', 'Please enter a valid amount (minimum 1 POL)', 'error');
+                return;
+            }
+            
+            try {
+                showStatus('stake-status', 'Processing transaction...', 'warning');
+                document.getElementById('stake-button').disabled = true;
+                
+                const amountWei = web3.utils.toWei(amount, 'ether');
+                
+                await contract.methods.stake().send({
+                    from: userAccount,
+                    value: amountWei
+                });
+                
+                showStatus('stake-status', 'Staking successful!', 'success');
+                document.getElementById('stake-amount').value = '';
+                updateStakingReceive();
+                
+                await loadStakingInfo();
+                await loadWalletBalance();
+                
+            } catch (error) {
+                console.error('Error staking tokens:', error);
+                showStatus('stake-status', 'Error staking tokens: ' + error.message, 'error');
+            } finally {
+                document.getElementById('stake-button').disabled = false;
+            }
+        }
+        
+        // Unstake tokens
+        async function unstakeTokens() {
+            try {
+                showStatus('unstake-status', 'Processing unstake transaction...', 'warning');
+                document.getElementById('unstake-button').disabled = true;
+                
+                await contract.methods.unstake().send({
+                    from: userAccount
+                });
+                
+                showStatus('unstake-status', 'Unstaking successful!', 'success');
+                await loadStakingInfo();
+                await loadWalletBalance();
+                
+            } catch (error) {
+                console.error('Error unstaking tokens:', error);
+                showStatus('unstake-status', 'Error unstaking tokens: ' + error.message, 'error');
+            } finally {
+                document.getElementById('unstake-button').disabled = false;
+            }
+        }
+        
+        // Claim rewards
+        async function claimRewards() {
+            try {
+                showStatus('rewards-status', 'Processing reward claim...', 'warning');
+                document.getElementById('claim-rewards-button').disabled = true;
+                
+                await contract.methods.claimRewards().send({
+                    from: userAccount
+                });
+                
+                showStatus('rewards-status', 'Rewards claimed successfully!', 'success');
+                await loadStakingInfo();
+                await loadContractInfo();
+                
+            } catch (error) {
+                console.error('Error claiming rewards:', error);
+                showStatus('rewards-status', 'Error claiming rewards: ' + error.message, 'error');
+            } finally {
+                document.getElementById('claim-rewards-button').disabled = false;
+            }
+        }
+        
+        // Update staking receive amount
+        function updateStakingReceive() {
+            const amount = document.getElementById('stake-amount').value;
+            if (amount && amount >= 1) {
+                const receiveAmount = amount * 0.98; // 2% tax
+                document.getElementById('staking-receive').textContent = formatNumber(receiveAmount) + ' POL';
+            } else {
+                document.getElementById('staking-receive').textContent = '0 POL';
+            }
+        }
+        
+        // Show status message
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status-message ${type}`;
+            element.style.display = 'block';
+            
+            if (type === 'success' || type === 'warning') {
+                setTimeout(() => {
+                    element.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Format number
+        function formatNumber(num) {
+            return parseFloat(num).toLocaleString('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 4
+            });
+        }
+        
+        // Event listeners for MetaMask changes
+        if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.on('accountsChanged', async (accounts) => {
+                if (accounts.length === 0) {
+                    disconnectWallet();
+                } else {
+                    await initializeWeb3(accounts[0]);
+                    showStatus('stake-status', 'Account changed successfully!', 'success');
+                }
+            });
+            
+            window.ethereum.on('chainChanged', () => {
+                window.location.reload();
+            });
+            
+            window.ethereum.on('disconnect', () => {
+                disconnectWallet();
+            });
+        }
+    </script>
+</body>
+</html>
