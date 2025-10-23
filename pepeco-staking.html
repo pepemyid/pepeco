@@ -292,6 +292,31 @@
             opacity: 0.8;
         }
         
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border-left: 4px solid var(--secondary);
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+            font-family: monospace;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         @media (max-width: 768px) {
             .wallet-info {
                 flex-direction: column;
@@ -353,6 +378,7 @@
                 <button class="tab" data-tab="unstake">Unstake</button>
                 <button class="tab" data-tab="rewards">Rewards</button>
                 <button class="tab" data-tab="stats">Statistics</button>
+                <button class="tab" data-tab="debug">Debug</button>
             </div>
             
             <!-- Stake Tab -->
@@ -360,7 +386,7 @@
                 <div class="form-group">
                     <label for="stake-amount">Amount to Stake (POL)</label>
                     <div class="input-group">
-                        <input type="number" id="stake-amount" min="1" placeholder="Enter amount">
+                        <input type="number" id="stake-amount" min="1" step="0.1" placeholder="Enter amount (minimum 1 POL)">
                         <div class="token">POL</div>
                     </div>
                 </div>
@@ -378,6 +404,10 @@
                         <span>Minimum Stake:</span>
                         <span>1 POL</span>
                     </div>
+                    <div class="info-row">
+                        <span>Your Staking Status:</span>
+                        <span id="user-staking-status">Not Staking</span>
+                    </div>
                 </div>
                 
                 <button class="btn btn-primary" id="stake-button" disabled>
@@ -385,6 +415,7 @@
                 </button>
                 
                 <div class="status-message" id="stake-status"></div>
+                <div class="debug-info" id="stake-debug"></div>
             </div>
             
             <!-- Unstake Tab -->
@@ -460,23 +491,45 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="card">
-            <h3>How Staking Works</h3>
-            <div style="margin-top: 15px;">
-                <p><strong>1.</strong> Stake your POL tokens to earn PEPECO rewards</p>
-                <p><strong>2.</strong> Rewards are calculated based on your staked amount and duration</p>
-                <p><strong>3.</strong> There's a 2% fee on staking and 20% penalty for early unstaking (before 1 year)</p>
-                <p><strong>4.</strong> You can claim your rewards at any time</p>
-                <p><strong>5.</strong> Make sure you're connected to Polygon network</p>
+            
+            <!-- Debug Tab -->
+            <div class="tab-content" id="debug-tab">
+                <div class="info-box">
+                    <h3>Transaction Debug</h3>
+                    <div class="info-row">
+                        <span>Last Transaction Hash:</span>
+                        <span id="last-tx-hash">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Last Error:</span>
+                        <span id="last-error">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Gas Used:</span>
+                        <span id="last-gas-used">-</span>
+                    </div>
+                    <div class="info-row">
+                        <span>Status:</span>
+                        <span id="last-tx-status">-</span>
+                    </div>
+                </div>
+                
+                <button class="btn btn-secondary" id="test-precheck">
+                    Test Staking Pre-Check
+                </button>
+                
+                <button class="btn btn-warning" id="clear-staking">
+                    Clear Staking Position (Emergency)
+                </button>
+                
+                <div class="status-message" id="debug-status"></div>
+                <div class="debug-info" id="debug-output"></div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
     <script>
-        // Contract ABI
         const contractABI = [
             {
                 "inputs": [],
@@ -618,9 +671,7 @@
         let contract;
         let userAccount = null;
         
-        // ✅ PERBAIKAN: Pastikan DOM fully loaded sebelum setup
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded, setting up...');
             setupTabs();
             setupEventListeners();
             checkInitialConnection();
@@ -630,21 +681,13 @@
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
                 tab.addEventListener('click', function() {
-                    // Remove active class from all tabs
-                    document.querySelectorAll('.tab').forEach(t => {
-                        t.classList.remove('active');
-                    });
-                    // Hide all tab contents
-                    document.querySelectorAll('.tab-content').forEach(c => {
-                        c.classList.remove('active');
-                    });
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                     
-                    // Add active class to clicked tab
                     this.classList.add('active');
                     const tabId = this.getAttribute('data-tab') + '-tab';
                     document.getElementById(tabId).classList.add('active');
                     
-                    // Load staking info if needed
                     if (this.getAttribute('data-tab') === 'unstake' || this.getAttribute('data-tab') === 'rewards') {
                         loadStakingInfo();
                     }
@@ -653,324 +696,71 @@
         }
         
         function setupEventListeners() {
-            console.log('Setting up event listeners...');
-            
-            // ✅ PERBAIKAN: Gunakan function references yang jelas
-            const connectBtn = document.getElementById('connect-wallet');
-            const disconnectBtn = document.getElementById('disconnect-wallet');
-            const switchBtn = document.getElementById('switch-wallet');
-            const stakeBtn = document.getElementById('stake-button');
-            const unstakeBtn = document.getElementById('unstake-button');
-            const claimBtn = document.getElementById('claim-rewards-button');
-            const stakeAmount = document.getElementById('stake-amount');
-            
-            if (connectBtn) {
-                connectBtn.addEventListener('click', connectWallet);
-                console.log('Connect button listener added');
-            } else {
-                console.error('Connect button not found!');
-            }
-            
-            if (disconnectBtn) disconnectBtn.addEventListener('click', disconnectWallet);
-            if (switchBtn) switchBtn.addEventListener('click', switchWallet);
-            if (stakeBtn) stakeBtn.addEventListener('click', stakeTokens);
-            if (unstakeBtn) unstakeBtn.addEventListener('click', unstakeTokens);
-            if (claimBtn) claimBtn.addEventListener('click', claimRewards);
-            if (stakeAmount) stakeAmount.addEventListener('input', updateStakingReceive);
+            document.getElementById('connect-wallet').addEventListener('click', connectWallet);
+            document.getElementById('disconnect-wallet').addEventListener('click', disconnectWallet);
+            document.getElementById('switch-wallet').addEventListener('click', switchWallet);
+            document.getElementById('stake-button').addEventListener('click', stakeTokens);
+            document.getElementById('unstake-button').addEventListener('click', unstakeTokens);
+            document.getElementById('claim-rewards-button').addEventListener('click', claimRewards);
+            document.getElementById('stake-amount').addEventListener('input', updateStakingReceive);
+            document.getElementById('test-precheck').addEventListener('click', testStakingPreCheck);
+            document.getElementById('clear-staking').addEventListener('click', clearStakingPosition);
         }
         
         async function checkInitialConnection() {
-            console.log('Checking initial connection...');
             if (typeof window.ethereum !== 'undefined') {
                 try {
-                    console.log('MetaMask detected');
-                    const accounts = await window.ethereum.request({ 
-                        method: 'eth_accounts' 
-                    });
-                    
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
                     if (accounts.length > 0) {
-                        console.log('Found accounts:', accounts);
                         await initializeWeb3(accounts[0]);
                     } else {
-                        console.log('No accounts found');
                         updateNetworkInfo();
                     }
                 } catch (error) {
                     console.error('Error checking initial connection:', error);
-                    showStatus('stake-status', 'Error connecting to wallet: ' + error.message, 'error');
                 }
-            } else {
-                console.log('MetaMask not detected');
-                showStatus('stake-status', 'Please install MetaMask to use this dApp', 'error');
             }
         }
         
         async function connectWallet() {
-            console.log('Connect wallet called');
-            
             if (typeof window.ethereum !== 'undefined') {
                 try {
                     showStatus('stake-status', 'Connecting to wallet...', 'warning');
                     
-                    // ✅ PERBAIKAN: Gunakan window.ethereum secara eksplisit
                     const accounts = await window.ethereum.request({ 
                         method: 'eth_requestAccounts' 
                     });
                     
-                    console.log('Accounts received:', accounts);
-                    
                     if (accounts.length > 0) {
                         await initializeWeb3(accounts[0]);
                         showStatus('stake-status', 'Wallet connected successfully!', 'success');
-                    } else {
-                        showStatus('stake-status', 'No accounts found', 'error');
                     }
                     
                 } catch (error) {
                     console.error('Connection error:', error);
-                    let errorMessage = 'Error connecting to wallet: ';
-                    
-                    if (error.code === 4001) {
-                        errorMessage = 'User denied wallet connection';
-                    } else if (error.code === -32002) {
-                        errorMessage = 'Wallet connection already pending. Please check MetaMask.';
-                    } else {
-                        errorMessage += error.message;
-                    }
-                    
-                    showStatus('stake-status', errorMessage, 'error');
+                    showStatus('stake-status', 'Error connecting to wallet: ' + error.message, 'error');
                 }
             } else {
                 showStatus('stake-status', 'Please install MetaMask to use this dApp', 'error');
-            }
-        }
-        
-        function disconnectWallet() {
-            console.log('Disconnecting wallet...');
-            userAccount = null;
-            
-            // Update UI
-            document.getElementById('wallet-status').textContent = 'Wallet Disconnected';
-            document.getElementById('wallet-status').className = 'wallet-status disconnected';
-            document.getElementById('wallet-address').style.display = 'none';
-            document.getElementById('wallet-balance').style.display = 'none';
-            
-            document.getElementById('connect-wallet').style.display = 'flex';
-            document.getElementById('disconnect-wallet').style.display = 'none';
-            document.getElementById('switch-wallet').style.display = 'none';
-            
-            // Disable buttons
-            document.getElementById('stake-button').disabled = true;
-            document.getElementById('unstake-button').disabled = true;
-            document.getElementById('claim-rewards-button').disabled = true;
-            
-            // Clear data
-            document.getElementById('staked-amount').textContent = '0 POL';
-            document.getElementById('staking-start').textContent = '-';
-            document.getElementById('staking-duration').textContent = '-';
-            document.getElementById('unstake-receive').textContent = '0 POL';
-            document.getElementById('pending-rewards').textContent = '0 PEPECO';
-            document.getElementById('pepeco-balance').textContent = '0';
-            
-            showStatus('stake-status', 'Wallet disconnected successfully', 'success');
-            
-            // Reset form
-            document.getElementById('stake-amount').value = '';
-            updateStakingReceive();
-        }
-        
-        async function switchWallet() {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    await window.ethereum.request({ 
-                        method: 'wallet_requestPermissions',
-                        params: [{ eth_accounts: {} }]
-                    });
-                    
-                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                    if (accounts.length > 0) {
-                        await initializeWeb3(accounts[0]);
-                        showStatus('stake-status', 'Wallet switched successfully!', 'success');
-                    }
-                } catch (error) {
-                    console.error('Error switching wallet:', error);
-                    if (error.code === 4001) {
-                        showStatus('stake-status', 'User cancelled wallet switch', 'warning');
-                    } else {
-                        showStatus('stake-status', 'Error switching wallet: ' + error.message, 'error');
-                    }
-                }
             }
         }
         
         async function initializeWeb3(account) {
             try {
-                console.log('Initializing Web3 with account:', account);
                 web3 = new Web3(window.ethereum);
                 userAccount = account;
                 
-                // Initialize contract
                 contract = new web3.eth.Contract(contractABI, CONTRACT_ADDRESS);
-                console.log('Contract initialized');
                 
-                // Update UI
                 updateWalletUI();
                 await updateNetworkInfo();
-                
-                // Load data
                 await loadContractInfo();
                 await loadStakingInfo();
                 await loadWalletBalance();
                 
-                console.log('Web3 initialization completed');
-                
             } catch (error) {
                 console.error('Error initializing Web3:', error);
                 showStatus('stake-status', 'Error initializing: ' + error.message, 'error');
-            }
-        }
-        
-        function updateWalletUI() {
-            const shortAddress = userAccount ? `${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}` : '';
-            
-            document.getElementById('wallet-status').textContent = `Connected: ${shortAddress}`;
-            document.getElementById('wallet-status').className = 'wallet-status connected';
-            document.getElementById('wallet-address').textContent = userAccount;
-            document.getElementById('wallet-address').style.display = 'block';
-            
-            document.getElementById('connect-wallet').style.display = 'none';
-            document.getElementById('disconnect-wallet').style.display = 'flex';
-            document.getElementById('switch-wallet').style.display = 'flex';
-            
-            document.getElementById('stake-button').disabled = false;
-        }
-        
-        async function updateNetworkInfo() {
-            if (web3 && userAccount) {
-                try {
-                    const chainId = await web3.eth.getChainId();
-                    const networkName = getNetworkName(chainId);
-                    
-                    document.getElementById('network-name').textContent = networkName;
-                    
-                    const isPolygon = chainId === 137 || chainId === '0x89';
-                    document.getElementById('network-indicator').className = isPolygon ? 'network-indicator' : 'network-indicator offline';
-                    
-                    if (!isPolygon) {
-                        showStatus('stake-status', 'Please switch to Polygon Mainnet', 'warning');
-                    } else {
-                        const statusElement = document.getElementById('stake-status');
-                        if (statusElement.textContent.includes('Polygon')) {
-                            statusElement.style.display = 'none';
-                        }
-                    }
-                    
-                } catch (error) {
-                    document.getElementById('network-name').textContent = 'Unknown Network';
-                    document.getElementById('network-indicator').className = 'network-indicator offline';
-                }
-            } else {
-                document.getElementById('network-name').textContent = 'Disconnected';
-                document.getElementById('network-indicator').className = 'network-indicator offline';
-            }
-        }
-        
-        function getNetworkName(chainId) {
-            const networks = {
-                1: 'Ethereum Mainnet',
-                137: 'Polygon Mainnet',
-                '0x89': 'Polygon Mainnet',
-                80001: 'Polygon Mumbai',
-                56: 'BSC Mainnet',
-                97: 'BSC Testnet'
-            };
-            return networks[chainId] || `Chain ${chainId}`;
-        }
-        
-        async function loadWalletBalance() {
-            if (!userAccount) return;
-            
-            try {
-                const balance = await web3.eth.getBalance(userAccount);
-                const balanceInEth = web3.utils.fromWei(balance, 'ether');
-                
-                document.getElementById('wallet-balance').textContent = `Balance: ${parseFloat(balanceInEth).toFixed(4)} MATIC`;
-                document.getElementById('wallet-balance').style.display = 'block';
-                
-                if (parseFloat(balanceInEth) < 0.01) {
-                    showStatus('stake-status', 'Low balance. You need MATIC for gas fees.', 'warning');
-                }
-                
-            } catch (error) {
-                console.error('Error loading wallet balance:', error);
-            }
-        }
-        
-        async function loadContractInfo() {
-            try {
-                const totalSupply = await contract.methods.totalSupply().call();
-                const currentPeriod = await contract.methods.getCurrentPeriod().call();
-                const rewardRate = await contract.methods.getCurrentRewardRate().call();
-                
-                document.getElementById('total-supply').textContent = formatNumber(totalSupply);
-                document.getElementById('current-period').textContent = currentPeriod;
-                
-                const rewardRateFormatted = web3.utils.fromWei(rewardRate.toString(), 'ether');
-                document.getElementById('reward-rate').textContent = formatNumber(rewardRateFormatted) + ' PEPECO';
-                document.getElementById('reward-rate-stat').textContent = formatNumber(rewardRateFormatted) + ' PEPECO';
-                
-                if (userAccount) {
-                    const balance = await contract.methods.balanceOf(userAccount).call();
-                    document.getElementById('pepeco-balance').textContent = formatNumber(web3.utils.fromWei(balance.toString(), 'ether'));
-                }
-            } catch (error) {
-                console.error('Error loading contract info:', error);
-                showStatus('stake-status', 'Error loading contract data', 'error');
-            }
-        }
-        
-        async function loadStakingInfo() {
-            if (!userAccount) return;
-            
-            try {
-                const stakingInfo = await contract.methods.getStakingInfo(userAccount).call();
-                const pendingRewards = await contract.methods.getPendingRewards(userAccount).call();
-                
-                const stakedAmountWei = stakingInfo.amount.toString();
-                const stakedAmountEth = parseFloat(web3.utils.fromWei(stakedAmountWei, 'ether'));
-                
-                document.getElementById('staked-amount').textContent = formatNumber(stakedAmountEth) + ' POL';
-                
-                if (stakingInfo.startTime !== '0') {
-                    const startTime = parseInt(stakingInfo.startTime);
-                    const startDate = new Date(startTime * 1000);
-                    document.getElementById('staking-start').textContent = startDate.toLocaleDateString();
-                    
-                    const duration = Math.floor((Date.now() / 1000 - startTime) / (60 * 60 * 24));
-                    document.getElementById('staking-duration').textContent = duration + ' days';
-                    
-                    let unstakeAmount = stakedAmountEth;
-                    if (Date.now() / 1000 < startTime + 365 * 24 * 60 * 60) {
-                        unstakeAmount = unstakeAmount * 0.8;
-                    }
-                    document.getElementById('unstake-receive').textContent = formatNumber(unstakeAmount) + ' POL';
-                    
-                    document.getElementById('unstake-button').disabled = !stakingInfo.isActive;
-                } else {
-                    document.getElementById('staking-start').textContent = '-';
-                    document.getElementById('staking-duration').textContent = '-';
-                    document.getElementById('unstake-receive').textContent = '0 POL';
-                    document.getElementById('unstake-button').disabled = true;
-                }
-                
-                const pendingRewardsWei = pendingRewards.toString();
-                const pendingRewardsEth = parseFloat(web3.utils.fromWei(pendingRewardsWei, 'ether'));
-                
-                document.getElementById('pending-rewards').textContent = formatNumber(pendingRewardsEth) + ' PEPECO';
-                document.getElementById('claim-rewards-button').disabled = !stakingInfo.isActive || pendingRewards === '0';
-                
-            } catch (error) {
-                console.error('Error loading staking info:', error);
             }
         }
         
@@ -983,81 +773,190 @@
             }
             
             try {
-                showStatus('stake-status', 'Processing transaction...', 'warning');
-                document.getElementById('stake-button').disabled = true;
+                const stakeButton = document.getElementById('stake-button');
+                stakeButton.innerHTML = '<span class="loading-spinner"></span> Processing...';
+                stakeButton.disabled = true;
+                
+                document.getElementById('stake-debug').style.display = 'none';
+                
+                showStatus('stake-status', 'Checking staking conditions...', 'warning');
                 
                 const amountWei = web3.utils.toWei(amount, 'ether');
                 
+                await performStakingPreCheck(amountWei);
+                
+                const gasPrice = await web3.eth.getGasPrice();
+                const increasedGasPrice = Math.floor(Number(gasPrice) * 1.3).toString(); // 30% increase
+                
+                const gasLimit = '300000';
+                
+                showStatus('stake-status', 'Confirm transaction in MetaMask...', 'warning');
+                
+                console.log('Sending stake transaction:', {
+                    from: userAccount,
+                    value: amountWei,
+                    gas: gasLimit,
+                    gasPrice: increasedGasPrice
+                });
+                
+                const transaction = await contract.methods.stake().send({
+                    from: userAccount,
+                    value: amountWei,
+                    gas: gasLimit,
+                    gasPrice: increasedGasPrice
+                });
+                
+                if (transaction.status) {
+                    showStatus('stake-status', 'Staking successful! 🎉', 'success');
+                    document.getElementById('stake-amount').value = '';
+                    updateStakingReceive();
+                    
+                    await loadStakingInfo();
+                    await loadWalletBalance();
+                    await loadContractInfo();
+                } else {
+                    throw new Error('Transaction reverted by contract');
+                }
+                
+            } catch (error) {
+                console.error('Error staking tokens:', error);
+                await handleStakingError(error, amount);
+                
+            } finally {
+                const stakeButton = document.getElementById('stake-button');
+                stakeButton.innerHTML = '<span>Stake POL Tokens</span>';
+                stakeButton.disabled = false;
+            }
+        }
+        
+        async function performStakingPreCheck(amountWei) {
+            try {
                 let gasEstimate;
                 try {
                     gasEstimate = await contract.methods.stake().estimateGas({
                         from: userAccount,
                         value: amountWei
                     });
+                    console.log('Gas estimate successful:', gasEstimate);
                 } catch (estimateError) {
                     console.error('Gas estimate failed:', estimateError);
-                    throw new Error('Transaction will likely fail. Please check staking conditions.');
+                    throw new Error('Staking conditions not met: ' + estimateError.message);
                 }
                 
-                const gasWithBuffer = (BigInt(gasEstimate) * 120n / 100n).toString();
+                const userBalance = await web3.eth.getBalance(userAccount);
+                const userBalanceEth = web3.utils.fromWei(userBalance, 'ether');
+                const amountEth = web3.utils.fromWei(amountWei, 'ether');
                 
-                const transaction = await contract.methods.stake().send({
-                    from: userAccount,
-                    value: amountWei,
-                    gas: gasWithBuffer
-                });
+                if (parseFloat(userBalanceEth) < parseFloat(amountEth) + 0.01) {
+                    throw new Error(`Insufficient balance. You have ${userBalanceEth} MATIC but need ${amountEth} MATIC for staking + gas`);
+                }
                 
-                showStatus('stake-status', 'Staking successful! 🎉', 'success');
-                document.getElementById('stake-amount').value = '';
-                updateStakingReceive();
+                const stakingInfo = await contract.methods.getStakingInfo(userAccount).call();
+                if (stakingInfo.isActive) {
+                    throw new Error('You already have an active staking position');
+                }
                 
-                await loadStakingInfo();
-                await loadWalletBalance();
-                await loadContractInfo();
+                return true;
                 
             } catch (error) {
-                console.error('Error staking tokens:', error);
+                throw error;
+            }
+        }
+        
+        async function handleStakingError(error, amount) {
+            let errorMessage = 'Staking failed: ';
+            let debugInfo = '';
+            
+            // Update debug info
+            document.getElementById('last-error').textContent = error.message;
+            document.getElementById('last-tx-status').textContent = 'Reverted';
+            
+            if (error.code === 4001) {
+                errorMessage = 'User denied transaction signature';
+            } else if (error.message.includes('insufficient funds')) {
+                errorMessage = 'Insufficient funds for transaction (gas + stake amount)';
+            } else if (error.message.includes('execution reverted')) {
+                errorMessage = 'Transaction reverted by contract. Possible reasons:\n';
+                errorMessage += '• Minimum stake amount (1 POL) not met\n';
+                errorMessage += '• Already have active staking position\n';
+                errorMessage += '• Contract restrictions\n';
                 
-                let errorMessage = 'Staking failed: ';
+                debugInfo = `Revert Details:
+                - Amount: ${amount} POL
+                - User: ${userAccount}
+                - Contract: ${CONTRACT_ADDRESS}
+                - Error: ${error.message}`;
                 
-                if (error.code === 4001) {
-                    errorMessage = 'User denied transaction signature';
-                } else if (error.message.includes('insufficient funds')) {
-                    errorMessage = 'Insufficient funds for transaction (gas + stake amount)';
-                } else if (error.message.includes('execution reverted')) {
-                    errorMessage = 'Transaction reverted by contract. Please check staking conditions.';
-                } else if (error.message.includes('Internal JSON-RPC error')) {
-                    errorMessage = 'RPC Provider Error. Please try again or use different RPC.';
-                } else {
-                    errorMessage += error.message;
+            } else if (error.message.includes('Already staking') || error.message.includes('active staking')) {
+                errorMessage = 'You already have an active staking position. Please unstake first.';
+            } else if (error.message.includes('Minimum staking amount')) {
+                errorMessage = 'Minimum staking amount is 1 POL.';
+            } else if (error.message.includes('gas')) {
+                errorMessage = 'Gas estimation failed. Please try with higher gas limit.';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            showStatus('stake-status', errorMessage, 'error');
+            
+            if (debugInfo) {
+                const debugElement = document.getElementById('stake-debug');
+                debugElement.textContent = debugInfo;
+                debugElement.style.display = 'block';
+            }
+            
+            await loadStakingInfo();
+        }
+        
+        async function testStakingPreCheck() {
+            try {
+                showStatus('debug-status', 'Running staking pre-check...', 'warning');
+                
+                const amountWei = web3.utils.toWei('1', 'ether');
+                const result = await performStakingPreCheck(amountWei);
+                
+                if (result) {
+                    showStatus('debug-status', '✅ Pre-check passed! You can stake.', 'success');
                 }
                 
-                showStatus('stake-status', errorMessage, 'error');
-            } finally {
-                document.getElementById('stake-button').disabled = false;
+            } catch (error) {
+                showStatus('debug-status', '❌ Pre-check failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearStakingPosition() {
+            try {
+                showStatus('debug-status', 'Attempting to clear staking position...', 'warning');
+                
+                // Coba unstake dulu
+                try {
+                    await contract.methods.unstake().send({
+                        from: userAccount,
+                        gas: '200000'
+                    });
+                    showStatus('debug-status', '✅ Successfully unstaked!', 'success');
+                } catch (unstakeError) {
+                    showStatus('debug-status', 'Unstake failed: ' + unstakeError.message, 'error');
+                }
+                
+                await loadStakingInfo();
+                
+            } catch (error) {
+                showStatus('debug-status', 'Clear staking failed: ' + error.message, 'error');
             }
         }
         
         async function unstakeTokens() {
             try {
+                const unstakeButton = document.getElementById('unstake-button');
+                unstakeButton.innerHTML = '<span class="loading-spinner"></span> Processing...';
+                unstakeButton.disabled = true;
+                
                 showStatus('unstake-status', 'Processing unstake transaction...', 'warning');
-                document.getElementById('unstake-button').disabled = true;
                 
-                let gasEstimate;
-                try {
-                    gasEstimate = await contract.methods.unstake().estimateGas({
-                        from: userAccount
-                    });
-                } catch (estimateError) {
-                    console.error('Gas estimate failed:', estimateError);
-                    throw new Error('Unstake may fail. Please check staking status.');
-                }
-                
-                const gasWithBuffer = (BigInt(gasEstimate) * 120n / 100n).toString();
-                
-                await contract.methods.unstake().send({
+                const transaction = await contract.methods.unstake().send({
                     from: userAccount,
-                    gas: gasWithBuffer
+                    gas: '200000'
                 });
                 
                 showStatus('unstake-status', 'Unstaking successful!', 'success');
@@ -1066,42 +965,25 @@
                 
             } catch (error) {
                 console.error('Error unstaking tokens:', error);
-                
-                let errorMessage = 'Unstaking failed: ';
-                if (error.code === 4001) {
-                    errorMessage = 'User denied transaction signature';
-                } else if (error.message.includes('Internal JSON-RPC error')) {
-                    errorMessage = 'Network error during unstake. Please try again.';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                showStatus('unstake-status', errorMessage, 'error');
+                showStatus('unstake-status', 'Unstaking failed: ' + error.message, 'error');
             } finally {
-                document.getElementById('unstake-button').disabled = false;
+                const unstakeButton = document.getElementById('unstake-button');
+                unstakeButton.innerHTML = '<span>Unstake POL Tokens</span>';
+                unstakeButton.disabled = false;
             }
         }
         
         async function claimRewards() {
             try {
+                const claimButton = document.getElementById('claim-rewards-button');
+                claimButton.innerHTML = '<span class="loading-spinner"></span> Processing...';
+                claimButton.disabled = true;
+                
                 showStatus('rewards-status', 'Processing reward claim...', 'warning');
-                document.getElementById('claim-rewards-button').disabled = true;
                 
-                let gasEstimate;
-                try {
-                    gasEstimate = await contract.methods.claimRewards().estimateGas({
-                        from: userAccount
-                    });
-                } catch (estimateError) {
-                    console.error('Gas estimate failed:', estimateError);
-                    throw new Error('Claim may fail. No rewards available or other issue.');
-                }
-                
-                const gasWithBuffer = (BigInt(gasEstimate) * 120n / 100n).toString();
-                
-                await contract.methods.claimRewards().send({
+                const transaction = await contract.methods.claimRewards().send({
                     from: userAccount,
-                    gas: gasWithBuffer
+                    gas: '200000'
                 });
                 
                 showStatus('rewards-status', 'Rewards claimed successfully!', 'success');
@@ -1110,19 +992,11 @@
                 
             } catch (error) {
                 console.error('Error claiming rewards:', error);
-                
-                let errorMessage = 'Claim failed: ';
-                if (error.code === 4001) {
-                    errorMessage = 'User denied transaction signature';
-                } else if (error.message.includes('Internal JSON-RPC error')) {
-                    errorMessage = 'Network error during claim. Please try again.';
-                } else {
-                    errorMessage += error.message;
-                }
-                
-                showStatus('rewards-status', errorMessage, 'error');
+                showStatus('rewards-status', 'Claim failed: ' + error.message, 'error');
             } finally {
-                document.getElementById('claim-rewards-button').disabled = false;
+                const claimButton = document.getElementById('claim-rewards-button');
+                claimButton.innerHTML = '<span>Claim Rewards</span>';
+                claimButton.disabled = false;
             }
         }
         
@@ -1165,25 +1039,189 @@
             });
         }
         
-        // Event listeners for MetaMask changes
+        async function updateNetworkInfo() {
+            if (web3 && userAccount) {
+                try {
+                    const chainId = await web3.eth.getChainId();
+                    const networkName = getNetworkName(chainId);
+                    
+                    document.getElementById('network-name').textContent = networkName;
+                    
+                    const isPolygon = chainId === 137 || chainId === '0x89';
+                    document.getElementById('network-indicator').className = isPolygon ? 'network-indicator' : 'network-indicator offline';
+                    
+                } catch (error) {
+                    document.getElementById('network-name').textContent = 'Unknown Network';
+                    document.getElementById('network-indicator').className = 'network-indicator offline';
+                }
+            } else {
+                document.getElementById('network-name').textContent = 'Disconnected';
+                document.getElementById('network-indicator').className = 'network-indicator offline';
+            }
+        }
+        
+        function getNetworkName(chainId) {
+            const networks = {
+                1: 'Ethereum Mainnet',
+                137: 'Polygon Mainnet',
+                '0x89': 'Polygon Mainnet',
+                80001: 'Polygon Mumbai',
+                56: 'BSC Mainnet',
+                97: 'BSC Testnet'
+            };
+            return networks[chainId] || `Chain ${chainId}`;
+        }
+        
+        async function loadWalletBalance() {
+            if (!userAccount) return;
+            
+            try {
+                const balance = await web3.eth.getBalance(userAccount);
+                const balanceInEth = web3.utils.fromWei(balance, 'ether');
+                
+                document.getElementById('wallet-balance').textContent = `Balance: ${parseFloat(balanceInEth).toFixed(4)} MATIC`;
+                document.getElementById('wallet-balance').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading wallet balance:', error);
+            }
+        }
+        
+        async function loadContractInfo() {
+            try {
+                const totalSupply = await contract.methods.totalSupply().call();
+                const currentPeriod = await contract.methods.getCurrentPeriod().call();
+                const rewardRate = await contract.methods.getCurrentRewardRate().call();
+                
+                document.getElementById('total-supply').textContent = formatNumber(web3.utils.fromWei(totalSupply, 'ether'));
+                document.getElementById('current-period').textContent = currentPeriod;
+                
+                const rewardRateFormatted = web3.utils.fromWei(rewardRate.toString(), 'ether');
+                document.getElementById('reward-rate').textContent = formatNumber(rewardRateFormatted) + ' PEPECO';
+                document.getElementById('reward-rate-stat').textContent = formatNumber(rewardRateFormatted) + ' PEPECO';
+                
+                if (userAccount) {
+                    const balance = await contract.methods.balanceOf(userAccount).call();
+                    document.getElementById('pepeco-balance').textContent = formatNumber(web3.utils.fromWei(balance.toString(), 'ether'));
+                }
+            } catch (error) {
+                console.error('Error loading contract info:', error);
+            }
+        }
+        
+        async function loadStakingInfo() {
+            if (!userAccount) return;
+            
+            try {
+                const stakingInfo = await contract.methods.getStakingInfo(userAccount).call();
+                const pendingRewards = await contract.methods.getPendingRewards(userAccount).call();
+                
+                const stakedAmountWei = stakingInfo.amount.toString();
+                const stakedAmountEth = parseFloat(web3.utils.fromWei(stakedAmountWei, 'ether'));
+                
+                document.getElementById('staked-amount').textContent = formatNumber(stakedAmountEth) + ' POL';
+                
+                if (stakingInfo.isActive) {
+                    document.getElementById('user-staking-status').textContent = '✅ Active';
+                    document.getElementById('user-staking-status').style.color = 'green';
+                    
+                    const startTime = parseInt(stakingInfo.startTime);
+                    const startDate = new Date(startTime * 1000);
+                    document.getElementById('staking-start').textContent = startDate.toLocaleDateString();
+                    
+                    const duration = Math.floor((Date.now() / 1000 - startTime) / (60 * 60 * 24));
+                    document.getElementById('staking-duration').textContent = duration + ' days';
+                    
+                    let unstakeAmount = stakedAmountEth;
+                    if (Date.now() / 1000 < startTime + 365 * 24 * 60 * 60) {
+                        unstakeAmount = unstakeAmount * 0.8;
+                    }
+                    document.getElementById('unstake-receive').textContent = formatNumber(unstakeAmount) + ' POL';
+                    
+                    document.getElementById('unstake-button').disabled = false;
+                    document.getElementById('stake-button').disabled = true;
+                } else {
+                    document.getElementById('user-staking-status').textContent = 'Not Staking';
+                    document.getElementById('user-staking-status').style.color = 'gray';
+                    document.getElementById('unstake-button').disabled = true;
+                    document.getElementById('stake-button').disabled = false;
+                }
+                
+                const pendingRewardsWei = pendingRewards.toString();
+                const pendingRewardsEth = parseFloat(web3.utils.fromWei(pendingRewardsWei, 'ether'));
+                
+                document.getElementById('pending-rewards').textContent = formatNumber(pendingRewardsEth) + ' PEPECO';
+                document.getElementById('claim-rewards-button').disabled = !stakingInfo.isActive || pendingRewards === '0';
+                
+            } catch (error) {
+                console.error('Error loading staking info:', error);
+            }
+        }
+        
+        function updateWalletUI() {
+            const shortAddress = userAccount ? `${userAccount.substring(0, 6)}...${userAccount.substring(userAccount.length - 4)}` : '';
+            
+            document.getElementById('wallet-status').textContent = `Connected: ${shortAddress}`;
+            document.getElementById('wallet-status').className = 'wallet-status connected';
+            document.getElementById('wallet-address').textContent = userAccount;
+            document.getElementById('wallet-address').style.display = 'block';
+            
+            document.getElementById('connect-wallet').style.display = 'none';
+            document.getElementById('disconnect-wallet').style.display = 'flex';
+            document.getElementById('switch-wallet').style.display = 'flex';
+        }
+        
+        function disconnectWallet() {
+            userAccount = null;
+            
+            document.getElementById('wallet-status').textContent = 'Wallet Disconnected';
+            document.getElementById('wallet-status').className = 'wallet-status disconnected';
+            document.getElementById('wallet-address').style.display = 'none';
+            document.getElementById('wallet-balance').style.display = 'none';
+            
+            document.getElementById('connect-wallet').style.display = 'flex';
+            document.getElementById('disconnect-wallet').style.display = 'none';
+            document.getElementById('switch-wallet').style.display = 'none';
+            
+            document.getElementById('stake-button').disabled = true;
+            document.getElementById('unstake-button').disabled = true;
+            document.getElementById('claim-rewards-button').disabled = true;
+            
+            document.getElementById('stake-amount').value = '';
+            updateStakingReceive();
+        }
+        
+        async function switchWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    await window.ethereum.request({ 
+                        method: 'wallet_requestPermissions',
+                        params: [{ eth_accounts: {} }]
+                    });
+                    
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await initializeWeb3(accounts[0]);
+                    }
+                } catch (error) {
+                    console.error('Error switching wallet:', error);
+                }
+            }
+        }
+
         if (typeof window.ethereum !== 'undefined') {
             window.ethereum.on('accountsChanged', async (accounts) => {
                 if (accounts.length === 0) {
                     disconnectWallet();
                 } else {
                     await initializeWeb3(accounts[0]);
-                    showStatus('stake-status', 'Account changed successfully!', 'success');
                 }
             });
             
             window.ethereum.on('chainChanged', (chainId) => {
-                console.log('Chain changed to:', chainId);
                 updateNetworkInfo();
             });
         }
-
-        // Debug info
-        console.log('Script loaded successfully');
     </script>
 </body>
 </html>
